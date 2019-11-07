@@ -548,56 +548,76 @@ if __name__ == "__main__":
     # all_testcases = all_testcases[:5]
 
 
-    MAE_compressed = []
-    KL_compressed = []
-    MAE = []
-    KL = []
+    if config['quantitative']:
+        MAE_compressed = []
+        KL_compressed = []
+        MAE = []
+        KL = []
 
     if config['compression_rate'] == 1:
         for testcase in all_testcases:
             start_time = time.time()
 
-            [kl_com, mae_com, kl, mae] = quantitative_eval(testcase)
+            if config['quantitative']:
+                [kl_com, mae_com, kl, mae] = quantitative_eval(testcase)
             KL_compressed.append(kl_com)
             MAE_compressed.append(mae_com)
             KL.append(kl)
             MAE.append(mae)
 
-            qualitative_eval(testcase)
+            if config['qualitative']:
+                qualitative_eval(testcase)
 
             print("{} took: {}".format(testcase, time.time() - start_time))
     else:
         for testcase in all_testcases:
             start_time = time.time()
 
-            [kl_com, mae_com, kl, mae] = quantitative_eval_compressed(testcase)
-            KL_compressed.append(kl_com)
-            MAE_compressed.append(mae_com)
-            KL.append(kl)
-            MAE.append(mae)
+            if config['quantitative']:
+                [kl_com, mae_com, kl, mae] = quantitative_eval_compressed(testcase)
+                KL_compressed.append(kl_com)
+                MAE_compressed.append(mae_com)
+                KL.append(kl)
+                MAE.append(mae)
 
-            qualitative_eval_compressed(testcase)
+            if config['qualitative']:
+                qualitative_eval_compressed(testcase)
 
             print("took: {}".format(time.time() - start_time))
 
+    if config['quantitative']:
+        data = {'testcase': [testcase.split('.png')[0] for testcase in all_testcases]}
 
-    data = {'testcase': [testcase.split('.png')[0] for testcase in all_testcases]}
-
-    data['MAE_compressed'] = MAE_compressed
-    data['KL_compressed'] = KL_compressed
-    data['MAE'] = MAE
-    data['KL'] = KL
-    df = pd.DataFrame(data)
-    df.to_csv(os.path.join(config['save_path'], 'quantitative.csv'), index=False)
+        data['MAE_decompressed'] = MAE_compressed
+        data['KL_decompressed'] = KL_compressed
+        data['MAE'] = MAE
+        data['KL'] = KL
+        df = pd.DataFrame(data)
+        df.to_csv(os.path.join(config['save_path'], 'quantitative.csv'), index=False)
 
 
-    print("mean MAE: {}".format(np.mean(MAE)))
-    print("std MAE: {}".format(np.std(MAE)))
-    print("mean KL: {}".format(np.mean(KL)))
-    print("std KL: {}".format(np.std(KL)))
+        print("mean MAE: {}".format(np.mean(MAE)))
+        print("std MAE: {}".format(np.std(MAE)))
+        print("mean KL: {}".format(np.mean(KL)))
+        print("std KL: {}".format(np.std(KL)))
 
-    if config['compression_rate'] > 1:
-        print("mean MAE_compressed: {}".format(np.mean(MAE_compressed)))
-        print("std MAE_compressed: {}".format(np.std(MAE_compressed)))
-        print("mean KL_compressed: {}".format(np.mean(KL_compressed)))
-        print("std KL_compressed: {}".format(np.std(KL_compressed)))
+        if config['compression_rate'] > 1:
+            print("mean MAE_decompressed: {}".format(np.mean(MAE_compressed)))
+            print("std MAE_decompressed: {}".format(np.std(MAE_compressed)))
+            print("mean KL_decompressed: {}".format(np.mean(KL_compressed)))
+            print("std KL_decompressed: {}".format(np.std(KL_compressed)))
+
+        # save overall metrics
+        overall = dict()
+        overall['mean MAE'] = [np.mean(MAE)]
+        overall['std MAE'] = [np.std(MAE)]
+        overall['mean KL'] = [np.mean(KL)]
+        overall['std KL'] = [np.std(KL)]
+        overall['mean MAE_decompressed'] = [np.mean(MAE_compressed)]
+        overall['std MAE_decompressed'] = [np.std(MAE_compressed)]
+        overall['mean KL_decompressed'] = [np.mean(KL_compressed)]
+        overall['std KL_decompressed'] = [np.std(KL_compressed)]
+        overall['num testcases'] = [len(all_testcases)]
+        df = pd.DataFrame(overall)
+        df.to_csv(os.path.join(config['save_path'], 'quantitative_overall.csv'), index=False)
+
