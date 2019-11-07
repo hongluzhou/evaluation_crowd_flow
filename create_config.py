@@ -16,6 +16,9 @@ def create_config():
             'save_path': '/Users/zhouhonglu/Downloads/Data_for_Honglu_eval',
             # where you save evaluation results
 
+            'qualitative': True,
+            'quantitative': True,
+
             'compression_rate': 1,
 
             # Raw input (when compression_rate > 1)
