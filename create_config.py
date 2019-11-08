@@ -10,16 +10,16 @@ Created on Tue Nov  5 18:51:52 2019
 def create_config():
     config = {
 
-            'data_path': '/Users/zhouhonglu/Downloads/Data_for_Honglu',
+            'data_path': '/Users/zhouhonglu/Downloads/M8onCompressionExp',
             # where you have inputs, ground truth, and predictions
 
-            'save_path': '/Users/zhouhonglu/Downloads/Data_for_Honglu_eval',
+            'save_path': '/Users/zhouhonglu/Downloads/M8onCompressionExp_eval',
             # where you save evaluation results
 
             'qualitative': True,
-            'quantitative': True,
+            'quantitative': False,
 
-            'compression_rate': 1,
+            'compression_rate': 2,
 
             # Raw input (when compression_rate > 1)
             'X': {
@@ -39,12 +39,12 @@ def create_config():
             'Y_com': 'Proxy_Comp',
 
             # Compressed Pred output / Pred output from model
-            'Y_com_hat': 'Prediction_Comp',
+            'Y_com_hat': 'prediction',
 
             # Raw GT output (when compression_rate > 1)
             'Y': 'Proxy_Decomp',
 
             # Raw Pred output (when compression_rate > 1)
-            'Y_hat': 'Prediction_Decomp'
+            'Y_hat': 'decompP'
     }
     return config

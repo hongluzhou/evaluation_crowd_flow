@@ -10,15 +10,14 @@ Created on Tue Nov  5 18:50:40 2019
 import os
 import pandas as pd
 import numpy as np
-from PIL import Image
 from scipy.misc import imsave
 import matplotlib.pyplot as plt
-import cv2
 import pdb
 import time
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.metrics import mean_absolute_error
 
+from contat_img import concat_pic_compressed
+from contat_img import contat_images_anysize_withpadding_horizontal
 from create_config import create_config
 config = create_config()
 
@@ -45,10 +44,10 @@ def qualitative_eval(testcase):
     G_com_new = (G_com_new[:, :, :3] * 255).astype(np.uint8)
     for i in range(E_com.shape[0]):
         for j in range(E_com.shape[1]):
+            if A_com[i][j] != 0:  # has agent
+                G_com_new[i, j, :] = [255, 255, 255]  # white for agents intial location
             if E_com[i][j] == 0:  # non-navigable
                 G_com_new[i][j] = [0, 0, 0]  # black for non-navigable cells
-            if A_com[i][j] == 1:  # has agent
-                G_com_new[i, j, :] = [255, 255, 255]  # white for agents intial location
     # goal
     (x_idx, y_idx) = np.where(G_com == np.min(G_com))
     G_com_new[x_idx[int(len(x_idx)/2)], y_idx[int(len(y_idx)/2)], :] = [255,0,255]  # Magenta
@@ -71,7 +70,7 @@ def qualitative_eval(testcase):
                 Y_com_new[i,j,:] = [192,192,192]  # grey [192,192,192]
             if E_com[i][j] == 0:  # non-navigable
                 Y_com_new[i, j, :] = 0  # black
-            # if A_com[i][j] == 1:  # has agent
+            # if A_com[i][j] != 0:  # has agent
             #     Y_com_new[i, j, :] = [255, 255, 0]  # yellow
     imsave(os.path.join(config['save_path'], testidx, 'Y_com.png'), Y_com_new)
 
@@ -88,7 +87,7 @@ def qualitative_eval(testcase):
                 Y_com_hat_new[i,j,:] = [192,192,192]  # grey [192,192,192]
             if E_com[i][j] == 0:  # non-navigable
                 Y_com_hat_new[i, j, :] = 0  # black
-            # if A_com[i][j] == 1:  # has agent
+            # if A_com[i][j] != 0:  # has agent
             #     Y_com_hat_new[i, j, :] = [255, 255, 0]  # yellow
     imsave(os.path.join(config['save_path'], testidx, 'Y_com_hat.png'), Y_com_hat_new)
 
@@ -112,15 +111,19 @@ def qualitative_eval(testcase):
                 Diff_new[i,j,:] = [192,192,192]  # grey [192,192,192]
             if E_com[i][j] == 0:  # non-navigable
                 Diff_new[i, j, :] = 0  # black
-            # if A_com[i][j] == 1:  # has agent
+            # if A_com[i][j] != 0:  # has agent
             #     Diff_new[i, j, :] = [255, 255, 0]  # yellow
-    imsave(os.path.join(config['save_path'], testidx, 'Colored_Diff.png'), Diff_new)
+    imsave(os.path.join(config['save_path'], testidx, 'Colored_Diff_com.png'), Diff_new)
 
 
     """
     concaticate all qualitative results of this test case
     """
-    concat_pic(testcase)
+    #concat_pic(testcase)
+    files = ['X_com.png', 'Y_com.png', 'Y_com_hat.png', 'Colored_Diff_com.png']
+    files_fullpath = [os.path.join(config['save_path'], testidx, file) for file in files]
+    contat_images_anysize_withpadding_horizontal(files_fullpath, os.path.join(config['save_path'], testidx, 'qualitative.png'))
+
 
     return
 
@@ -153,10 +156,11 @@ def qualitative_eval_compressed(testcase):
     G_new = (G_new[:, :, :3] * 255).astype(np.uint8)
     for i in range(E.shape[0]):
         for j in range(E.shape[1]):
-            if E[i][j] == 0:  # non-navigable
-                G_new[i][j] = [0, 0, 0]  # black for non-navigable cells
             if A[i][j] == 1:  # has agent
                 G_new[i, j, :] = [255, 255, 255]  # white for agents intial location
+            if E[i][j] == 0:  # non-navigable
+                G_new[i][j] = [0, 0, 0]  # black for non-navigable cells
+
     # goal
     (x_idx, y_idx) = np.where(G == np.min(G))
     G_new[x_idx[int(len(x_idx)/2)], y_idx[int(len(y_idx)/2)], :] = [255,0,255]  # Magenta
@@ -167,18 +171,33 @@ def qualitative_eval_compressed(testcase):
 
 
     """
-    Compressed omposite input: X_com
+    Compressed composite input: X_com
     """
     # G, E, A
+#    A_com_tem = A_com.copy()
+#    for i in range(A_com.shape[0]):
+#        for j in range(A_com.shape[1]):
+#            if A_com[i][j] > 0 and A_com[i][j] < 1:  # has agent
+#                A_com_tem[i][j] = rgb_grey_color(A_com[i][j])
+#                pdb.set_trace()
+
+    gm = plt.get_cmap('gray')
+    A_com_tem = (gm(A_com)[:, :, :3] * 255).astype(np.uint8)
+
     cm = plt.get_cmap('jet')
     G_com_new = cm(G_com)
     G_com_new = (G_com_new[:, :, :3] * 255).astype(np.uint8)
     for i in range(E_com.shape[0]):
         for j in range(E_com.shape[1]):
+            if A_com[i][j] != 0:  # has agent
+                if A_com[i][j] == 1:
+                    G_com_new[i, j, :] = [255, 255, 255]  # white for agents intial location
+                if A_com[i][j] < 1:
+                    G_com_new[i, j, :] = A_com_tem[i, j, :]
             if E_com[i][j] == 0:  # non-navigable
                 G_com_new[i][j] = [0, 0, 0]  # black for non-navigable cells
-            if A_com[i][j] == 1:  # has agent
-                G_com_new[i, j, :] = [255, 255, 255]  # white for agents intial location
+
+
     # goal
     (x_idx, y_idx) = np.where(G_com == np.min(G_com))
     G_com_new[x_idx[int(len(x_idx)/2)], y_idx[int(len(y_idx)/2)], :] = [255,0,255]  # Magenta
@@ -201,7 +220,7 @@ def qualitative_eval_compressed(testcase):
                 Y_com_new[i,j,:] = [192,192,192]  # grey [192,192,192]
             if E_com[i][j] == 0:  # non-navigable
                 Y_com_new[i, j, :] = 0  # black
-            # if A_com[i][j] == 1:  # has agent
+            # if A_com[i][j] != 0:  # has agent
             #     Y_com_new[i, j, :] = [255, 255, 0]  # yellow
     imsave(os.path.join(config['save_path'], testidx, 'Y_com.png'), Y_com_new)
 
@@ -218,7 +237,7 @@ def qualitative_eval_compressed(testcase):
                 Y_com_hat_new[i,j,:] = [192,192,192]  # grey [192,192,192]
             if E_com[i][j] == 0:  # non-navigable
                 Y_com_hat_new[i, j, :] = 0  # black
-            # if A_com[i][j] == 1:  # has agent
+            # if A_com[i][j] != 1:  # has agent
             #     Y_com_hat_new[i, j, :] = [255, 255, 0]  # yellow
     imsave(os.path.join(config['save_path'], testidx, 'Y_com_hat.png'), Y_com_hat_new)
 
@@ -277,7 +296,7 @@ def qualitative_eval_compressed(testcase):
                 Diff_new[i,j,:] = [192,192,192]  # grey [192,192,192]
             if E_com[i][j] == 0:  # non-navigable
                 Diff_new[i, j, :] = 0  # black
-            # if A_com[i][j] == 1:  # has agent
+            # if A_com[i][j] != 0:  # has agent
             #     Diff_new[i, j, :] = [255, 255, 0]  # yellow
     imsave(os.path.join(config['save_path'], testidx, 'Colored_Diff_com.png'), Diff_new)
 
@@ -310,7 +329,20 @@ def qualitative_eval_compressed(testcase):
     """
     concaticate all qualitative results of this test case
     """
-    concat_pic_compressed(testcase)
+    G = plt.imread(os.path.join(config['data_path'], config['X']['G'], testcase))
+    # goal
+    (x_idx, y_idx) = np.where(G == np.min(G))
+    G_idx = [int(x_idx[int(len(x_idx)/2)]/2), int(y_idx[int(len(y_idx)/2)]/2)]
+    # print(G_idx)
+    # pdb.set_trace()
+    # G_new[x_idx[int(len(x_idx)/2)], y_idx[int(len(y_idx)/2)], :] = [255,0,255]  # Magenta
+
+
+
+    files = ['X.png', 'X_com.png', 'Y_com.png', 'Y_com_hat.png', 'Colored_Diff_com.png', 'Y.png', 'Y_hat.png', 'Colored_Diff.png']
+    files_fullpath = [os.path.join(config['save_path'], testidx, file) for file in files]
+    contat_images_anysize_withpadding_horizontal(files_fullpath, os.path.join(config['save_path'], testidx, 'qualitative.png'), G_idx)
+    # concat_pic_compressed(testcase, config)
 
     return
 
@@ -343,178 +375,6 @@ def quantitative_eval_compressed(testcase):
     return
 
 
-def concat_images(imga, imgb):
-    # Combines two color image ndarrays side-by-side.
-    ha,wa = imga.shape[:2]
-    hb,wb = imgb.shape[:2]
-    max_height = np.max([ha, hb])
-    total_width = wa+wb
-    new_img = np.zeros(shape=(max_height, total_width, 3))
-    new_img[:ha,:wa]=imga
-    new_img[:hb,wa:wa+wb]=imgb
-    return new_img
-
-
-def concat_n_images(image_list):
-    output = None
-    for i, img in enumerate(image_list):
-        # img = plt.imread(img_path)[:,:,:3]
-        if i==0:
-            output = img
-        else:
-            output = concat_images(output, img)
-    return output
-
-
-def concat_pic(testcase):
-    testidx = testcase.split('.png')[0]
-
-    # read data
-    pic1 = plt.imread(os.path.join(config['save_path'], testidx, 'X_com.png'))
-    pic2 = plt.imread(os.path.join(config['save_path'], testidx, 'Y_com.png'))
-    pic3 = plt.imread(os.path.join(config['save_path'], testidx, 'Y_com_hat.png'))
-    pic4 = plt.imread(os.path.join(config['save_path'], testidx, 'Colored_Diff.png'))
-
-    interval = np.zeros((pic1.shape[0],  5))
-    cm = plt.get_cmap('binary')
-    interval = cm(interval)
-    interval = (interval[:, :, :3] * 100).astype(np.uint8)
-
-    pics = [pic1, interval, pic2, interval, pic3, interval, pic4]
-    output = concat_n_images(pics)
-
-
-    plt.figure()
-    ax = plt.gca()
-    im = ax.imshow(output, cmap='jet', interpolation='nearest')
-    # create an axes on the right side of ax. The width of cax will be 5%
-    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="1%", pad=0.05)
-    cbar = plt.colorbar(im, cax=cax)
-    cbar.ax.tick_params(labelsize=5)
-    ax.axis('off')
-    # plt.show()
-    # os.exit(0)
-    plt.savefig(os.path.join(config['save_path'], testidx, 'qualitative.png'), bbox_inches='tight', dpi=1000)
-
-
-#def concat_pic_compressed1(testcase):
-#    testidx = testcase.split('.png')[0]
-#
-#    # read data
-#
-#    pic1 = plt.imread(os.path.join(config['save_path'], testidx, 'X_com.png'))
-#    pic2 = plt.imread(os.path.join(config['save_path'], testidx, 'Y_com.png'))
-#    pic3 = plt.imread(os.path.join(config['save_path'], testidx, 'Y_com_hat.png'))
-#    pic4 = plt.imread(os.path.join(config['save_path'], testidx, 'Colored_Diff_com.png'))
-#    pic5 = Image.open(os.path.join(config['save_path'], testidx, 'X.png'))
-#    pic6 = plt.imread(os.path.join(config['save_path'], testidx, 'Y.png'))
-#    pic7 = plt.imread(os.path.join(config['save_path'], testidx, 'Y_hat.png'))
-#    pic8 = plt.imread(os.path.join(config['save_path'], testidx, 'Colored_Diff.png'))
-#
-#    size = 112, 112
-#
-#    # pic5 = Image.fromarray(pic5)
-#    # pic5.thumbnail(size, Image.ANTIALIAS)
-#    # pic5 = np.array(pic5)
-#
-#    pic5 = np.asarray(pic5.resize((112, 112)))
-#
-#
-#    interval = np.zeros((pic1.shape[0],  5))
-#    cm = plt.get_cmap('binary')
-#    interval = cm(interval)
-#    interval = (interval[:, :, :3] * 100).astype(np.uint8)
-#
-#    pics = [pic1, interval, pic2, interval, pic3, interval, pic4, interval, pic5]
-#    #pics = [pic1, interval, pic2, interval, pic3, interval, pic4, interval, pic5, interval, pic6, interval, pic7, interval, pic8]
-#    output = concat_n_images(pics)
-#
-#
-#    plt.figure()
-#    ax = plt.gca()
-#    im = ax.imshow(output, cmap='jet', interpolation='nearest')
-#    # create an axes on the right side of ax. The width of cax will be 5%
-#    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-#    divider = make_axes_locatable(ax)
-#    cax = divider.append_axes("right", size="1%", pad=0.05)
-#    cbar = plt.colorbar(im, cax=cax)
-#    cbar.ax.tick_params(labelsize=5)
-#    ax.axis('off')
-#    # plt.show()
-#    # os.exit(0)
-#    plt.savefig(os.path.join(config['save_path'], testidx, 'qualitative_all.png'), bbox_inches='tight', dpi=1000)
-#
-#    return
-
-
-def concat_pic_compressed(testcase):
-    testidx = testcase.split('.png')[0]
-
-    # read data
-
-    pic1 = plt.imread(os.path.join(config['save_path'], testidx, 'X_com.png'))
-    pic2 = plt.imread(os.path.join(config['save_path'], testidx, 'Y_com.png'))
-    pic3 = plt.imread(os.path.join(config['save_path'], testidx, 'Y_com_hat.png'))
-    pic4 = plt.imread(os.path.join(config['save_path'], testidx, 'Colored_Diff_com.png'))
-
-    interval = np.zeros((pic1.shape[0],  5))
-    cm = plt.get_cmap('binary')
-    interval = cm(interval)
-    interval = (interval[:, :, :3] * 100).astype(np.uint8)
-
-    pics = [pic1, interval, pic2, interval, pic3, interval, pic4]
-    output = concat_n_images(pics)
-
-
-    plt.figure()
-    ax = plt.gca()
-    im = ax.imshow(output, cmap='jet', interpolation='nearest')
-    # create an axes on the right side of ax. The width of cax will be 5%
-    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="1%", pad=0.05)
-    cbar = plt.colorbar(im, cax=cax)
-    cbar.ax.tick_params(labelsize=5)
-    ax.axis('off')
-    # plt.show()
-    # os.exit(0)
-    plt.savefig(os.path.join(config['save_path'], testidx, 'qualitative_com.png'), bbox_inches='tight', dpi=1000)
-
-
-
-    pic1 = plt.imread(os.path.join(config['save_path'], testidx, 'X.png'))
-    pic2 = plt.imread(os.path.join(config['save_path'], testidx, 'Y.png'))
-    pic3 = plt.imread(os.path.join(config['save_path'], testidx, 'Y_hat.png'))
-    pic4 = plt.imread(os.path.join(config['save_path'], testidx, 'Colored_Diff.png'))
-
-    interval = np.zeros((pic1.shape[0],  5))
-    cm = plt.get_cmap('binary')
-    interval = cm(interval)
-    interval = (interval[:, :, :3] * 100).astype(np.uint8)
-
-    pics = [pic1, interval, pic2, interval, pic3, interval, pic4]
-    output = concat_n_images(pics)
-
-
-    plt.figure()
-    ax = plt.gca()
-    im = ax.imshow(output, cmap='jet', interpolation='nearest')
-    # create an axes on the right side of ax. The width of cax will be 5%
-    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="1%", pad=0.05)
-    cbar = plt.colorbar(im, cax=cax)
-    cbar.ax.tick_params(labelsize=5)
-    ax.axis('off')
-    # plt.show()
-    # os.exit(0)
-    plt.savefig(os.path.join(config['save_path'], testidx, 'qualitative.png'), bbox_inches='tight', dpi=1000)
-
-    return
-
-
 #def KLDivergence(a, b):
 #    """
 #    https://datascience.stackexchange.com/a/9264
@@ -526,6 +386,7 @@ def concat_pic_compressed(testcase):
 
 
 def KLDivergence(p, q):
+    # p is ground truth, q is prediction
     p = p.reshape((np.square(p.shape[0]),))
     q = q.reshape((np.square(q.shape[0]),))
 
@@ -545,7 +406,11 @@ def KLDivergence(p, q):
 if __name__ == "__main__":
     # get all test cases
     all_testcases = [file for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file]
-    # all_testcases = all_testcases[:5]
+    all_testcases = ['1.png']
+
+
+    if not os.path.exists(os.path.join(config['save_path'])):
+        os.makedirs(os.path.join(config['save_path']))
 
 
     if config['quantitative']:
@@ -555,23 +420,25 @@ if __name__ == "__main__":
         KL = []
 
     if config['compression_rate'] == 1:
-        for testcase in all_testcases:
-            start_time = time.time()
+        for i in range(len(all_testcases)):
+            testcase = all_testcases[i]
+            # start_time = time.time()
 
             if config['quantitative']:
                 [kl_com, mae_com, kl, mae] = quantitative_eval(testcase)
-            KL_compressed.append(kl_com)
-            MAE_compressed.append(mae_com)
-            KL.append(kl)
-            MAE.append(mae)
+                KL_compressed.append(kl_com)
+                MAE_compressed.append(mae_com)
+                KL.append(kl)
+                MAE.append(mae)
 
             if config['qualitative']:
                 qualitative_eval(testcase)
 
-            print("{} took: {}".format(testcase, time.time() - start_time))
+            # print("{} took: {}".format(testcase, time.time() - start_time))
     else:
-        for testcase in all_testcases:
-            start_time = time.time()
+        for i in range(len(all_testcases)):
+            testcase = all_testcases[i]
+            # start_time = time.time()
 
             if config['quantitative']:
                 [kl_com, mae_com, kl, mae] = quantitative_eval_compressed(testcase)
@@ -583,7 +450,7 @@ if __name__ == "__main__":
             if config['qualitative']:
                 qualitative_eval_compressed(testcase)
 
-            print("took: {}".format(time.time() - start_time))
+            # print("{} took: {}".format(testcase, time.time() - start_time))
 
     if config['quantitative']:
         data = {'testcase': [testcase.split('.png')[0] for testcase in all_testcases]}
