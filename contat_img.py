@@ -16,8 +16,7 @@ from scipy.misc import imsave
 import matplotlib.pyplot as plt
 
 
-def create_interval_image(save_path=False):
-    interval_length = 112
+def create_interval_image(interval_length, save_path=False):
     interval_width = 5
 
     interval = np.zeros((interval_length, interval_width))
@@ -30,24 +29,15 @@ def create_interval_image(save_path=False):
     return interval
 
 
-def contat_images_anysize_withpadding_horizontal(list_of_img_path, save_path, G_idx=None):
-    interval = create_interval_image()
-
-    min_shape = (112, 112)
-
+def contat_images_anysize_withpadding_horizontal(list_of_img_path, save_path):
+    max_shape = (112, 112)
+    interval = create_interval_image(interval_length=max_shape[0])
 
     list_of_images = []
     for i in range(len(list_of_img_path)):
         file = list_of_img_path[i]
         img = Image.open(file)
-        img = np.asarray(img.resize(min_shape))
-        if i == 0:
-            if G_idx is not None:
-                img.setflags(write=1)
-                img[G_idx[0], G_idx[1], :] = [255,0,255]  # Magenta
-        # img = Image.fromarray(img)
-        # img.show()
-        # os._exit(0)
+        img = np.asarray(img.resize(max_shape))
         list_of_images.append(img)
         if i != (len(list_of_img_path) -1):
             list_of_images.append(interval)
@@ -68,36 +58,97 @@ def contat_images_anysize_withpadding_horizontal(list_of_img_path, save_path, G_
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="1%", pad=0.05)
     cbar = plt.colorbar(im, cax=cax)
-    cbar.ax.tick_params(labelsize=5)
+    cbar.ax.tick_params(labelsize=3)
     ax.axis('off')
     # plt.tight_layout()
     # plt.show()
     # os.exit(0)
     plt.savefig(save_path, bbox_inches='tight', dpi=1000)
 
+    crop_image_tight(save_path)
+
     return
 
 
-def contat_images_anysize_withpadding_vertical(list_of_img_path, save_path):
-    interval = create_interval_image(folder)
-
-    min_shape = (112, 112)
+def contat_images_anysize_withpadding_horizontal_compression(list_of_img_path, save_path, config):
+    max_shape = (112 * config['compression_rate'], 112 * config['compression_rate'])
+    interval = create_interval_image(interval_length=max_shape[0])
 
     list_of_images = []
     for i in range(len(list_of_img_path)):
         file = list_of_img_path[i]
         img = Image.open(file)
-        img = np.asarray(img.resize(min_shape))
+        img = np.asarray(img.resize(max_shape))
         list_of_images.append(img)
         if i != (len(list_of_img_path) -1):
             list_of_images.append(interval)
 
-    imgs_comb = np.vstack(tuple(list_of_images))
+    imgs_comb = np.hstack(tuple(list_of_images))
 
     imgs_comb = Image.fromarray(imgs_comb)
-
     imgs_comb.save(save_path)
+
+    # add colormap lengend on the right
+    output = plt.imread(save_path)
+
+    plt.figure()
+    ax = plt.gca()
+    im = ax.imshow(output, cmap='jet', interpolation='nearest')
+    # create an axes on the right side of ax. The width of cax will be 5%
+    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="1%", pad=0.05)
+    cbar = plt.colorbar(im, cax=cax)
+    cbar.ax.tick_params(labelsize=3)
+    ax.axis('off')
+    # plt.tight_layout()
+    # plt.show()
+    # os.exit(0)
+    plt.savefig(save_path, bbox_inches='tight', dpi=1000)
+
+    crop_image_tight(save_path)
+
     return
+
+
+def crop_image_tight(save_path):
+    img = Image.open(save_path)
+    img = np.asarray(img)
+
+    margin = 5
+
+    for r in range(img.shape[0]):
+        if np.sum(np.asarray(img)[r,:,:]) != 255 * img.shape[1] * img.shape[2]:
+            row_up = r - margin
+            break
+
+    r = img.shape[0]
+    for i in range(img.shape[0]):
+        r -= 1
+        if np.sum(np.asarray(img)[r,:,:]) != 255 * img.shape[1] * img.shape[2]:
+            row_bottom = r + margin
+            break
+
+    for c in range(img.shape[1]):
+        if np.sum(np.asarray(img)[:,c,:]) != 255 * img.shape[0] * img.shape[2]:
+            col_left = c - margin
+            break
+
+    c = img.shape[1]
+    for i in range(img.shape[1]):
+        c -= 1
+        if np.sum(np.asarray(img)[:,c,:]) != 255 * img.shape[0] * img.shape[2]:
+            col_right = c + margin
+            break
+
+    # print(row_up, row_bottom, col_left, col_right)
+    # pdb.set_trace()
+
+    img = Image.fromarray(img[row_up:row_bottom, col_left:col_right, :])
+    img.save(save_path)
+
+    return
+
 
 
 def contat_images_anysize_horizontal(imgs):

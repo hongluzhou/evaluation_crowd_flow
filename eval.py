@@ -15,9 +15,15 @@ import matplotlib.pyplot as plt
 import pdb
 import time
 from sklearn.metrics import mean_absolute_error
+from multiprocessing import Pool
+import multiprocessing
+numcpu = multiprocessing.cpu_count()
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 from contat_img import concat_pic_compressed
 from contat_img import contat_images_anysize_withpadding_horizontal
+from contat_img import contat_images_anysize_withpadding_horizontal_compression
 from create_config import create_config
 config = create_config()
 
@@ -181,21 +187,35 @@ def qualitative_eval_compressed(testcase):
 #                A_com_tem[i][j] = rgb_grey_color(A_com[i][j])
 #                pdb.set_trace()
 
-    gm = plt.get_cmap('gray')
-    A_com_tem = (gm(A_com)[:, :, :3] * 255).astype(np.uint8)
+    gray_agents = False
 
-    cm = plt.get_cmap('jet')
-    G_com_new = cm(G_com)
-    G_com_new = (G_com_new[:, :, :3] * 255).astype(np.uint8)
-    for i in range(E_com.shape[0]):
-        for j in range(E_com.shape[1]):
-            if A_com[i][j] != 0:  # has agent
-                if A_com[i][j] == 1:
+    if gray_agents:
+        gm = plt.get_cmap('gray')
+        A_com_tem = (gm(A_com)[:, :, :3] * 255).astype(np.uint8)
+
+        cm = plt.get_cmap('jet')
+        G_com_new = cm(G_com)
+        G_com_new = (G_com_new[:, :, :3] * 255).astype(np.uint8)
+        for i in range(E_com.shape[0]):
+            for j in range(E_com.shape[1]):
+                if A_com[i][j] != 0:  # has agent
+                    if A_com[i][j] == 1:
+                        G_com_new[i, j, :] = [255, 255, 255]  # white for agents intial location
+                    if A_com[i][j] < 1:
+                        G_com_new[i, j, :] = A_com_tem[i, j, :]
+                if E_com[i][j] == 0:  # non-navigable
+                    G_com_new[i][j] = [0, 0, 0]  # black for non-navigable cells
+
+    else:
+        cm = plt.get_cmap('jet')
+        G_com_new = cm(G_com)
+        G_com_new = (G_com_new[:, :, :3] * 255).astype(np.uint8)
+        for i in range(E_com.shape[0]):
+            for j in range(E_com.shape[1]):
+                if A_com[i][j] != 0:  # has agent
                     G_com_new[i, j, :] = [255, 255, 255]  # white for agents intial location
-                if A_com[i][j] < 1:
-                    G_com_new[i, j, :] = A_com_tem[i, j, :]
-            if E_com[i][j] == 0:  # non-navigable
-                G_com_new[i][j] = [0, 0, 0]  # black for non-navigable cells
+                if E_com[i][j] == 0:  # non-navigable
+                    G_com_new[i][j] = [0, 0, 0]  # black for non-navigable cells
 
 
     # goal
@@ -329,19 +349,9 @@ def qualitative_eval_compressed(testcase):
     """
     concaticate all qualitative results of this test case
     """
-    G = plt.imread(os.path.join(config['data_path'], config['X']['G'], testcase))
-    # goal
-    (x_idx, y_idx) = np.where(G == np.min(G))
-    G_idx = [int(x_idx[int(len(x_idx)/2)]/2), int(y_idx[int(len(y_idx)/2)]/2)]
-    # print(G_idx)
-    # pdb.set_trace()
-    # G_new[x_idx[int(len(x_idx)/2)], y_idx[int(len(y_idx)/2)], :] = [255,0,255]  # Magenta
-
-
-
     files = ['X.png', 'X_com.png', 'Y_com.png', 'Y_com_hat.png', 'Colored_Diff_com.png', 'Y.png', 'Y_hat.png', 'Colored_Diff.png']
     files_fullpath = [os.path.join(config['save_path'], testidx, file) for file in files]
-    contat_images_anysize_withpadding_horizontal(files_fullpath, os.path.join(config['save_path'], testidx, 'qualitative.png'), G_idx)
+    contat_images_anysize_withpadding_horizontal_compression(files_fullpath, os.path.join(config['save_path'], testidx, 'qualitative.png'), config)
     # concat_pic_compressed(testcase, config)
 
     return
@@ -402,11 +412,103 @@ def KLDivergence(p, q):
     return result
 
 
+"""
+multiprocessing version
+"""
+#if __name__ == "__main__":
+#    # get all test cases
+#    all_testcases_idx = sorted([int(file.split('.png')[0]) for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file])
+#    all_testcases = [str(file) + '.png' for file in all_testcases_idx]
+#    # all_testcases = ['0.png']
+#
+#
+#    if not os.path.exists(os.path.join(config['save_path'])):
+#        os.makedirs(os.path.join(config['save_path']))
+#
+#
+#    if config['quantitative']:
+#        MAE_compressed = []
+#        KL_compressed = []
+#        MAE = []
+#        KL = []
+#
+#    if config['compression_rate'] == 1:
+#        if config['quantitative']:
+#            p = Pool(numcpu)
+#            metrics = p.map(quantitative_eval, all_testcases)
+#
+#            for metric in metrics:
+#                [kl_com, mae_com, kl, mae] = metric
+#                KL_compressed.append(kl_com)
+#                MAE_compressed.append(mae_com)
+#                KL.append(kl)
+#                MAE.append(mae)
+#
+#        if config['qualitative']:
+#            p = Pool(numcpu)
+#            p.map(qualitative_eval, all_testcases)
+#
+#    else:
+#        if config['quantitative']:
+#            p = Pool(numcpu)
+#            metrics = p.map(quantitative_eval_compressed, all_testcases)
+#
+#            for metric in metrics:
+#                [kl_com, mae_com, kl, mae] = metric
+#                KL_compressed.append(kl_com)
+#                MAE_compressed.append(mae_com)
+#                KL.append(kl)
+#                MAE.append(mae)
+#
+#        if config['qualitative']:
+#            p = Pool(numcpu)
+#            p.map(qualitative_eval_compressed, all_testcases)
+#
+#    if config['quantitative']:
+#        data = {'testcase': [testcase.split('.png')[0] for testcase in all_testcases]}
+#
+#        data['MAE_decompressed'] = MAE_compressed
+#        data['KL_decompressed'] = KL_compressed
+#        data['MAE'] = MAE
+#        data['KL'] = KL
+#        df = pd.DataFrame(data)
+#        df.to_csv(os.path.join(config['save_path'], 'quantitative.csv'), index=False)
+#
+#
+#        print("mean MAE: {}".format(np.mean(MAE)))
+#        print("std MAE: {}".format(np.std(MAE)))
+#        print("mean KL: {}".format(np.mean(KL)))
+#        print("std KL: {}".format(np.std(KL)))
+#
+#        if config['compression_rate'] > 1:
+#            print("mean MAE_decompressed: {}".format(np.mean(MAE_compressed)))
+#            print("std MAE_decompressed: {}".format(np.std(MAE_compressed)))
+#            print("mean KL_decompressed: {}".format(np.mean(KL_compressed)))
+#            print("std KL_decompressed: {}".format(np.std(KL_compressed)))
+#
+#        # save overall metrics
+#        overall = dict()
+#        overall['mean MAE'] = [np.mean(MAE)]
+#        overall['std MAE'] = [np.std(MAE)]
+#        overall['mean KL'] = [np.mean(KL)]
+#        overall['std KL'] = [np.std(KL)]
+#        overall['mean MAE_decompressed'] = [np.mean(MAE_compressed)]
+#        overall['std MAE_decompressed'] = [np.std(MAE_compressed)]
+#        overall['mean KL_decompressed'] = [np.mean(KL_compressed)]
+#        overall['std KL_decompressed'] = [np.std(KL_compressed)]
+#        overall['num testcases'] = [len(all_testcases)]
+#        df = pd.DataFrame(overall)
+#        df.to_csv(os.path.join(config['save_path'], 'quantitative_overall.csv'), index=False)
 
+
+"""
+single process version
+"""
 if __name__ == "__main__":
     # get all test cases
-    all_testcases = [file for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file]
-    all_testcases = ['1.png']
+    all_testcases_idx = sorted([int(file.split('.png')[0]) for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file])
+    all_testcases = [str(file) + '.png' for file in all_testcases_idx]
+    # all_testcases = ['0.png']
 
 
     if not os.path.exists(os.path.join(config['save_path'])):
@@ -487,4 +589,3 @@ if __name__ == "__main__":
         overall['num testcases'] = [len(all_testcases)]
         df = pd.DataFrame(overall)
         df.to_csv(os.path.join(config['save_path'], 'quantitative_overall.csv'), index=False)
-

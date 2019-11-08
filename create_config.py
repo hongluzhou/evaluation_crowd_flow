@@ -10,14 +10,14 @@ Created on Tue Nov  5 18:51:52 2019
 def create_config():
     config = {
 
-            'data_path': '/Users/zhouhonglu/Downloads/M8onCompressionExp',
+            'data_path': '/home/honglu/Downloads/M8onCompressionExp',
             # where you have inputs, ground truth, and predictions
 
-            'save_path': '/Users/zhouhonglu/Downloads/M8onCompressionExp_eval',
+            'save_path': '/home/honglu/Downloads/M8onCompressionExp_eval',
             # where you save evaluation results
 
             'qualitative': True,
-            'quantitative': False,
+            'quantitative': True,
 
             'compression_rate': 2,
 
