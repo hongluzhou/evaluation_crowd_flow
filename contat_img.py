@@ -14,6 +14,7 @@ from PIL import Image
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.misc import imsave
 import matplotlib.pyplot as plt
+import shutil
 
 
 def create_interval_image(interval_length, save_path=False):
@@ -29,7 +30,7 @@ def create_interval_image(interval_length, save_path=False):
     return interval
 
 
-def contat_images_anysize_withpadding_horizontal(list_of_img_path, save_path):
+def contat_images_anysize_withpadding_horizontal(list_of_img_path, save_path, config, testcase):
     max_shape = (112, 112)
     interval = create_interval_image(interval_length=max_shape[0])
 
@@ -67,10 +68,13 @@ def contat_images_anysize_withpadding_horizontal(list_of_img_path, save_path):
 
     crop_image_tight(save_path)
 
+    shutil.copyfile(save_path, os.path.join(config['save_path'], "qualitative_results", testcase))
+
+    plt.close('all')
     return
 
 
-def contat_images_anysize_withpadding_horizontal_compression(list_of_img_path, save_path, config):
+def contat_images_anysize_withpadding_horizontal_compression(list_of_img_path, save_path, config, testcase):
     max_shape = (112 * config['compression_rate'], 112 * config['compression_rate'])
     interval = create_interval_image(interval_length=max_shape[0])
 
@@ -108,6 +112,9 @@ def contat_images_anysize_withpadding_horizontal_compression(list_of_img_path, s
 
     crop_image_tight(save_path)
 
+    shutil.copyfile(save_path, os.path.join(config['save_path'], "qualitative_results", testcase))
+
+    plt.close('all')
     return
 
 
@@ -231,6 +238,9 @@ def concat_pic(testcase, config):
     # os.exit(0)
     plt.savefig(os.path.join(config['save_path'], testidx, 'qualitative.png'), bbox_inches='tight', dpi=1000)
 
+    plt.close('all')
+    return
+
 
 #def concat_pic_compressed1(testcase):
 #    testidx = testcase.split('.png')[0]
@@ -345,6 +355,7 @@ def concat_pic_compressed(testcase, config):
     # os.exit(0)
     plt.savefig(os.path.join(config['save_path'], testidx, 'qualitative.png'), bbox_inches='tight', dpi=1000)
 
+    plt.close('all')
     return
 
 

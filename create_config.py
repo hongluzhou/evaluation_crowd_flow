@@ -10,16 +10,18 @@ Created on Tue Nov  5 18:51:52 2019
 def create_config():
     config = {
 
-            'data_path': '/home/honglu/Downloads/M8onCompressionExp',
+            'data_path': '/Users/zhouhonglu/Downloads/Multi-Goal and Top-Half-Agents/M9 on Half-Agents',
             # where you have inputs, ground truth, and predictions
 
-            'save_path': '/home/honglu/Downloads/M8onCompressionExp_eval',
+            'save_path': '/Users/zhouhonglu/Downloads/M9 on Half-Agents eval',
             # where you save evaluation results
 
             'qualitative': True,
             'quantitative': True,
 
-            'compression_rate': 2,
+            'compression_rate': 1,
+
+            'goals': 1,
 
             # Raw input (when compression_rate > 1)
             'X': {
