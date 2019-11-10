@@ -442,117 +442,88 @@ def KLDivergence(p, q):
 """
 multiprocessing version
 """
-#if __name__ == "__main__":
-#    # get all test cases
-#    all_testcases_idx = sorted([int(file.split('.png')[0]) for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file])
-#    all_testcases = [str(file) + '.png' for file in all_testcases_idx]
-#    # all_testcases = ['0.png']
-#
-#    print("number of test cases: {}".format(len(all_testcases)))
-#
-#
-#    if not os.path.exists(os.path.join(config['save_path'])):
-#        os.makedirs(os.path.join(config['save_path']))
-#
-#
-#    if config['quantitative']:
-#        MAE_compressed = []
-#        KL_compressed = []
-#        MAE = []
-#        KL = []
-#
-#    if config['compression_rate'] == 1:
-#        if config['quantitative']:
-#            p = Pool(numcpu)
-#            metrics = p.map(quantitative_eval, all_testcases)
-#
-#            for metric in metrics:
-#                [kl_com, mae_com, kl, mae] = metric
-#                KL_compressed.append(kl_com)
-#                MAE_compressed.append(mae_com)
-#                KL.append(kl)
-#                MAE.append(mae)
-#
-#        if config['qualitative']:
-#            p = Pool(numcpu)
-#            p.map(qualitative_eval, all_testcases)
-#
-#    else:
-#        if config['quantitative']:
-#            p = Pool(numcpu)
-#            metrics = p.map(quantitative_eval_compressed, all_testcases)
-#
-#            for metric in metrics:
-#                [kl_com, mae_com, kl, mae] = metric
-#                KL_compressed.append(kl_com)
-#                MAE_compressed.append(mae_com)
-#                KL.append(kl)
-#                MAE.append(mae)
-#
-#        if config['qualitative']:
-#            p = Pool(numcpu)
-#            p.map(qualitative_eval_compressed, all_testcases)
-#
-#    if config['quantitative']:
-#        data = {'testcase': [testcase.split('.png')[0] for testcase in all_testcases]}
-#
-#        data['MAE_decompressed'] = MAE_compressed
-#        data['KL_decompressed'] = KL_compressed
-#        data['MAE'] = MAE
-#        data['KL'] = KL
-#        df = pd.DataFrame(data)
-#        df.to_csv(os.path.join(config['save_path'], 'quantitative.csv'), index=False)
-#
-#
-#        print("mean MAE: {}".format(np.mean(MAE)))
-#        print("std MAE: {}".format(np.std(MAE)))
-#        print("mean KL: {}".format(np.mean(KL)))
-#        print("std KL: {}".format(np.std(KL)))
-#
-#        if config['compression_rate'] > 1:
-#            print("mean MAE_decompressed: {}".format(np.mean(MAE_compressed)))
-#            print("std MAE_decompressed: {}".format(np.std(MAE_compressed)))
-#            print("mean KL_decompressed: {}".format(np.mean(KL_compressed)))
-#            print("std KL_decompressed: {}".format(np.std(KL_compressed)))
-#
-#        # save overall metrics
-#        overall = dict()
-#        overall['mean MAE'] = [np.mean(MAE)]
-#        overall['std MAE'] = [np.std(MAE)]
-#        overall['mean KL'] = [np.mean(KL)]
-#        overall['std KL'] = [np.std(KL)]
-#        if config['compression_rate'] > 1:
-#            overall['mean MAE_decompressed'] = [np.mean(MAE_compressed)]
-#            overall['std MAE_decompressed'] = [np.std(MAE_compressed)]
-#            overall['mean KL_decompressed'] = [np.mean(KL_compressed)]
-#            overall['std KL_decompressed'] = [np.std(KL_compressed)]
-#        overall['num testcases'] = [len(all_testcases)]
-#        df = pd.DataFrame(overall)
-#        df.to_csv(os.path.join(config['save_path'], 'quantitative_overall.csv'), index=False)
+def main_multiprocessing(all_testcases):
+
+    if config['quantitative']:
+        MAE_compressed = []
+        KL_compressed = []
+        MAE = []
+        KL = []
+
+    if config['compression_rate'] == 1:
+        if config['quantitative']:
+            p = Pool(numcpu)
+            metrics = p.map(quantitative_eval, all_testcases)
+
+            for metric in metrics:
+                [kl_com, mae_com, kl, mae] = metric
+                KL_compressed.append(kl_com)
+                MAE_compressed.append(mae_com)
+                KL.append(kl)
+                MAE.append(mae)
+
+        if config['qualitative']:
+            p = Pool(numcpu)
+            p.map(qualitative_eval, all_testcases)
+
+    else:
+        if config['quantitative']:
+            p = Pool(numcpu)
+            metrics = p.map(quantitative_eval_compressed, all_testcases)
+
+            for metric in metrics:
+                [kl_com, mae_com, kl, mae] = metric
+                KL_compressed.append(kl_com)
+                MAE_compressed.append(mae_com)
+                KL.append(kl)
+                MAE.append(mae)
+
+        if config['qualitative']:
+            p = Pool(numcpu)
+            p.map(qualitative_eval_compressed, all_testcases)
+
+    if config['quantitative']:
+        data = {'testcase': [testcase.split('.png')[0] for testcase in all_testcases]}
+
+        data['MAE_decompressed'] = MAE_compressed
+        data['KL_decompressed'] = KL_compressed
+        data['MAE'] = MAE
+        data['KL'] = KL
+        df = pd.DataFrame(data)
+        df.to_csv(os.path.join(config['save_path'], 'quantitative.csv'), index=False)
+
+
+        print("mean MAE: {}".format(np.mean(MAE)))
+        print("std MAE: {}".format(np.std(MAE)))
+        print("mean KL: {}".format(np.mean(KL)))
+        print("std KL: {}".format(np.std(KL)))
+
+        if config['compression_rate'] > 1:
+            print("mean MAE_decompressed: {}".format(np.mean(MAE_compressed)))
+            print("std MAE_decompressed: {}".format(np.std(MAE_compressed)))
+            print("mean KL_decompressed: {}".format(np.mean(KL_compressed)))
+            print("std KL_decompressed: {}".format(np.std(KL_compressed)))
+
+        # save overall metrics
+        overall = dict()
+        overall['mean MAE'] = [np.mean(MAE)]
+        overall['std MAE'] = [np.std(MAE)]
+        overall['mean KL'] = [np.mean(KL)]
+        overall['std KL'] = [np.std(KL)]
+        if config['compression_rate'] > 1:
+            overall['mean MAE_decompressed'] = [np.mean(MAE_compressed)]
+            overall['std MAE_decompressed'] = [np.std(MAE_compressed)]
+            overall['mean KL_decompressed'] = [np.mean(KL_compressed)]
+            overall['std KL_decompressed'] = [np.std(KL_compressed)]
+        overall['num testcases'] = [len(all_testcases)]
+        df = pd.DataFrame(overall)
+        df.to_csv(os.path.join(config['save_path'], 'quantitative_overall.csv'), index=False)
 
 
 """
 single process version
 """
-if __name__ == "__main__":
-    print(config['data_path'])
-    print(config['save_path'])
-
-    # get all test cases
-    try:
-        all_testcases_idx = sorted([int(file.split('.png')[0]) for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file])
-        all_testcases = [str(file) + '.png' for file in all_testcases_idx]
-    except ValueError:
-        all_testcases = [file for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file]
-    # all_testcases = all_testcases[:20]
-    # all_testcases = ['0.png']
-
-    print("number of test cases: {}".format(len(all_testcases)))
-
-
-    if not os.path.exists(os.path.join(config['save_path'])):
-        os.makedirs(os.path.join(config['save_path']))
-
+def main_single_process(all_testcases):
 
     if config['quantitative']:
         MAE_compressed = []
@@ -633,3 +604,32 @@ if __name__ == "__main__":
         overall['num testcases'] = [len(all_testcases)]
         df = pd.DataFrame(overall)
         df.to_csv(os.path.join(config['save_path'], 'quantitative_overall.csv'), index=False)
+
+
+
+if __name__ == "__main__":
+    print(config['data_path'])
+    print(config['save_path'])
+
+    # get all test cases
+    try:
+        all_testcases_idx = sorted([int(file.split('.png')[0]) for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file])
+        all_testcases = [str(file) + '.png' for file in all_testcases_idx]
+    except ValueError:
+        all_testcases = [file for file in os.listdir(os.path.join(config['data_path'], config['X_com']['A_com'])) if '.png' in file]
+    """
+    if you don't want to evaluate all test cases, change "all_testcases" here!
+    """
+    # all_testcases = all_testcases[:20]
+    # all_testcases = ['0.png']
+
+    print("number of test cases: {}".format(len(all_testcases)))
+
+
+    if not os.path.exists(os.path.join(config['save_path'])):
+        os.makedirs(os.path.join(config['save_path']))
+
+    if len(all_testcases) < 20:
+        main_single_process(all_testcases)
+    else:
+        main_multiprocessing(all_testcases)

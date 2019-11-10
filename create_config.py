@@ -10,10 +10,10 @@ Created on Tue Nov  5 18:51:52 2019
 def create_config():
     config = {
 
-            'data_path': '/Users/zhouhonglu/Downloads/Multi-Goal and Top-Half-Agents/M9 on Half-Agents',
+            'data_path': '/home/honglu/Downloads/afternoon_test',
             # where you have inputs, ground truth, and predictions
 
-            'save_path': '/Users/zhouhonglu/Downloads/M9 on Half-Agents eval',
+            'save_path': '/home/honglu/Downloads/afternoon_test_eval',
             # where you save evaluation results
 
             'qualitative': True,
@@ -41,7 +41,7 @@ def create_config():
             'Y_com': 'Proxy_Comp',
 
             # Compressed Pred output / Pred output from model
-            'Y_com_hat': 'prediction',
+            'Y_com_hat': 'Prediction_Comp',
 
             # Raw GT output (when compression_rate > 1)
             'Y': 'Proxy_Decomp',
